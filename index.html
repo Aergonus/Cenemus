@@ -40,15 +40,18 @@
     </div>
 
 	<!-- Yelp API requirements https://www.yelp.com/developers/display_requirements -->
-	<form action="#" id="polldata" onsubmit="return submitPoll(this);">
+	<form action="" id="polldata" onsubmit="createPoll();">
+		<input type="hidden" name="p"  value="0" />
+		<input type="hidden" name="u"  value="0" />
+		
 		<label for="que">Que:</label>
-			<input type="text" name="que" value="" placeholder="You are cordially invited to... Type your custom dining invitation here!"><br>
-		<label for="opt" class="optl">1.</label>
-			<input type="text" name="opt" class="opt" value="" placeholder="Enter an option here"><br>
-		<label for="opt" class="optl">2.</label>
-			<input type="text" name="opt" class="opt" value="" placeholder="Enter an option here"><br>
-		<label for="opt" class="optl">3.</label>		
-			<input type="text" name="opt" class="opt" value="" placeholder="Enter an extra option!"><br>
+			<input type="text" name="que" value="" placeholder="You are cordially invited to... Type your custom dining invitation here!" required><br>
+		<ol id="optl">
+			<li><input type="text" name="opt" class="opt" value="" placeholder="Enter an option here."></li>
+			<li><input type="text" name="opt" class="opt" value="" placeholder="Enter an option here."></li>
+			<li><input type="text" name="opt" class="opt" id="extra_opt" oninput="addOp()" value="" placeholder="Enter an extra option!"></li>
+		</ol>
+		<input type="submit" id="cPollFormButton">
 	</form>
 	<!-- Dynamically have more options or add button. + option -->
 	
@@ -60,11 +63,10 @@
 	</div>
 
 	<form action="Cenemus.html" id="redirect-poll">
-		<input type="hidden" name="p"  value="0" />
-		<input type="hidden" name="u"  value="0" />
+
 	</form>
 	
-	<button type="button" form="redirect-poll" id="create">Create Poll</button>
+	<button type="button" form="redirect-poll" id="create" onClick="createPoll()">Create Poll</button>
 	
 	<div id="overlay" tabindex="0">
     </div>
