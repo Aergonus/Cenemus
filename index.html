@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<title>Cenemus! Let's Dine!</title> <!-- https://en.wikibooks.org/wiki/Latin/Lesson_2-Subjunctive_Use Snapshot 2015/11/28-->
+		<!--link type="text/css" rel="stylesheet" href="stylesheet.css"/-->
+		<meta name="description" content="Cenemus - Let's Dine!">
+		<meta name="viewport" content="width=device-width">
+		<!--link rel="shortcut icon" type="image/png" href="media/favicon.ico"/-->
+		
+		<script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
+		
+		<script type="text/javascript" src="./js/fb.js"></script>
+	</head>
+	<body>
+		<div id="notification"></div>
+		<div id="logBar">
+			<a href="#" onclick="onLoginClick()" id="login">Login</a>
+		</div>
+		
+    <header>
+      <a class="primary" href="/">Cenemus</a>
+    </header>
+
+    <!-- Banner - Responsive -->
+    <div class="adContainer">
+		<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+		<!-- Cenemus -->
+		<ins class="adsbygoogle"
+			 style="display:block"
+			 data-ad-client="ca-pub-5581565483873958"
+			 data-ad-slot="4575197826"
+			 data-ad-format="auto"></ins>
+		<script>
+		(adsbygoogle = window.adsbygoogle || []).push({});
+		</script>
+    </div>
+
+	<!-- Yelp API requirements https://www.yelp.com/developers/display_requirements -->
+	<form action="#" id="polldata" onsubmit="return submitPoll(this);">
+		<label for="que">Que:</label>
+			<input type="text" name="que" value="" placeholder="You are cordially invited to... Type your custom dining invitation here!"><br>
+		<label for="opt" class="optl">1.</label>
+			<input type="text" name="opt" class="opt" value="" placeholder="Enter an option here"><br>
+		<label for="opt" class="optl">2.</label>
+			<input type="text" name="opt" class="opt" value="" placeholder="Enter an option here"><br>
+		<label for="opt" class="optl">3.</label>		
+			<input type="text" name="opt" class="opt" value="" placeholder="Enter an extra option!"><br>
+	</form>
+	<!-- Dynamically have more options or add button. + option -->
+	
+	
+		
+	</div>
+	<div class="search">
+		Search for a cusine or a restuarant near you.
+	</div>
+
+	<form action="Cenemus.html" id="redirect-poll">
+		<input type="hidden" name="p"  value="0" />
+		<input type="hidden" name="u"  value="0" />
+	</form>
+	
+	<button type="button" form="redirect-poll" id="create">Create Poll</button>
+	
+	<div id="overlay" tabindex="0">
+    </div>
+		<script type="text/javascript">
+			var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+			document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+			try {
+			var pageTracker = _gat._getTracker("UA-61748230-1");
+			pageTracker._trackPageview();
+			} catch(err) {}
+		</script>
+	</body>
+</html>
