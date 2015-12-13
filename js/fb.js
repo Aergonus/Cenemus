@@ -19,6 +19,7 @@ function onLoginClick() {
 }
 
 var db = new Firebase('https://cenemus.firebaseio.com/')
+
 // Allows for empty polls. Possible for users to enter values. 
 // TODO: Think how to remove exploit. Bots could easily spam or "save poll names"
 function getPollOp() {
@@ -48,9 +49,15 @@ function addOp(){
 	}
 	*/
 	var opti = $('#polldata .opt').length;
-	$('#optl').append(
-		"		<li><input type=\"text\" name=\"opt\" class=\"opt\" id=\"extra_opt\" oninput=\"addOp(this)\" value=\"\" placeholder=\"Enter an extra option!\"></li>"
-	);
+	if (opti < 25) {
+		$('#optl').append(
+			"		<li><input type=\"text\" name=\"opt\" class=\"opt\" id=\"extra_opt\" oninput=\"addOp(this)\" value=\"\" placeholder=\"Enter an extra option!\"></li>"
+		);
+	} else {
+		$('#optl').append( 
+		"<div style=\"font-size: .8em;\">Research shows that having too many options usually results in a lower particiaption rate. We recommend under 24 options. <br> \
+Check out <a href=\"http://www.apa.org/monitor/jun04/toomany.aspx\"> this article <a> from the American Psychological Association for details.</div>");
+	}
 }
 
 function submitPoll(){
