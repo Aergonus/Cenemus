@@ -1,3 +1,23 @@
+// Mirroring Script event
+$.event.special.inputchange = {
+    setup: function() {
+        var self = this, val;
+        $.data(this, 'timer', window.setInterval(function() {
+            val = self.value;
+            if ( $.data( self, 'cache') != val ) {
+                $.data( self, 'cache', val );
+                $( self ).trigger( 'inputchange' );
+            }
+        }, 100));
+    },
+    teardown: function() {
+        window.clearInterval( $.data(this, 'timer') );
+    },
+    add: function() {
+        $.data(this, 'cache', this.value);
+    }
+};
+
 // TESTING
 var myDataRef = new Firebase('https://v8x9g5gob7f.firebaseio-demo.com/');
 var myUserID = null;
@@ -42,8 +62,8 @@ function initMap() {
         lng: position.coords.longitude
       };
 
-      infoWindow.setPosition(pos);
-      infoWindow.setContent('Location found.');
+      //infoWindow.setPosition(pos);
+      //infoWindow.setContent('Location found.');
       map.setCenter(pos);
     }, function() {
       handleLocationError(true, infoWindow, map.getCenter());
@@ -145,8 +165,8 @@ function initMap() {
  
 }
 
-// Run the initialize function when the window has finished loading.
-google.maps.event.addDomListener(window, 'load', initMap);
+// Run the initialize function when the window has finished loading. Called by loading of api
+// google.maps.event.addDomListener(window, 'load', initMap);
 
 
 // DEV
@@ -158,27 +178,43 @@ var db = new Firebase('https://cenemus.firebaseio.com/')
 function getPollOp() {
 	var opts = $('input[name^=opt]');//new Array($('#polldata .opt').length);
 	var rops = [];
+	var rids = [];
 	for (var i = 0; i < $('#polldata .opt').length; i++) {
 		if(opts[i].value) {
 			rops.push(opts[i].value);
+			rids.push($(opts[i]).attr("pid"))
 		}
 	}
-	return rops;
+	return {rops,rids};
 }
 
 function remOp(){
 	$('#last_opt').remove();
 }
 
+function searchMirror() {
+	$('#pac-input')[0].value = $('#mirror').val();
+	//TODO: Call new search
+}
+
 function focusOpt(focus) {
-	fid = $('[id^=focus]').index(focus)+1;
+	//fid = $('[id^=focus]').index(focus)+1;
+	console.log(focus);
+	$('#mirror').css("background-color",'#e1e1e1');
+	$('.opt').not(focus).css("background-color",'#fff').off('inputchange');
+	$(focus).css("background-color",'#e1e1e1').on('inputchange', function() {
+		$('#mirror').text(focus.value);
+	});
+	//$('.opt').prop('disabled', true);
+	//$(focus).prop('disabled', false);
 	//$('#map-wrapper').insertAfter($('#optl li:eq('+fid+')'));
 	var offset = $('#map-wrapper').offset();
 	$('html, body').animate({
 		scrollTop: offset.top,
 		scrollLeft: offset.left
 	});
-	$('#pac-input').focus();
+	if($('#pac-input').val())
+		$('#pac-input').focus();
 }
 
 function addOp(){
@@ -188,7 +224,7 @@ function addOp(){
 	var opti = $('#polldata .opt').length;
 	if (opti < 25) {
 		$('#optl').append(
-			"		<li><input type=\"text\" name=\"opt"+(opti+1)+"\" class=\"opt\" id=\"extra_opt\" oninput=\"addOp(this)\" value=\"\" placeholder=\"Enter an extra option!\">\
+			"		<li><input type=\"text\" name=\"opt"+(opti+1)+"\" class=\"opt\" id=\"extra_opt\" oninput=\"addOp(this)\" value=\"\" placeholder=\"Enter an extra option!\" onClick=\"focusOpt(this)\">\
  <button type=\"button\" id=\"focus"+(opti+1)+"\" onClick=\"focusOpt(this)\"> Search for a place </button></li>"
 		);
 	} else {
@@ -223,18 +259,25 @@ function createPoll(){
 	var pOptions = [];
 	for (var i in opts) {
 		pOptions.push( {
-			Value:opts[i],
+			Value:opts['rops'][i],
+			PlaceId:opts['rids'][i],
 			Votes:0
 			}
 		)
 	}
+	
+	if (!pOptions.length || $('input[name=custom]')[0].checkValidity()) {
+		$('<input type="submit">').hide().appendTo($('#polldata')).click().remove();
+		return false;
+	}
+	
 	var newPoll = myDataRef.push({Op: pOptions, Que: $('input[name=que]').val()});
 	var UUIDkey = newPoll.key();
 	var customLink = $('input[name=custom]').val();
 	if ($('input[name=custom]').val()) {
 		var lookup = {};
 		lookup[customLink] = UUIDkey;
-		myDataRef.child('lookup').set(lookup);
+		myDataRef.child('lookup').update(lookup);
 	} else {
 		customLink = UUIDkey;
 	}
