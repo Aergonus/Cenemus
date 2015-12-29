@@ -1,0 +1,12 @@
+div {
+	margin: 0px;
+	padding: 0px;
+}
+
+#mirror-wrapper {
+	margin-bottom: .2em;
+}
+
+#mirror-wrapper * {
+	vertical-align: middle;
+}
