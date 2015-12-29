@@ -17,8 +17,8 @@
 		<script async defer type="text/javascript"  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFhviHQI5fUQiiYA9gze2gRK9JXDlfcmg&libraries=places&signed_in=true&callback=initMap"></script> 
 		<script src="https://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
 		
-		<script type="text/javascript" src="./js/fb.js"></script>
 	</head>
+		<script type="text/javascript" src="./js/fb.js"></script>
 	<body>
 		<div id="notification"></div>
 		<div id="logBar">
@@ -43,6 +43,11 @@
 		</script>
     </div>
 
+	<!-- Mirrored Search -->
+	<div id="mirror-wrapper">
+	<label for="mirror" >Mirrored Search (current selected option):</label>
+	<textarea id="mirror" style="height: 1em; resize: none;"></textarea> <button type="button" onClick="searchMirror()"> Search for me! </button>
+	</div>
 	<!-- Global Map Search Settings -->
 	<div id="map-wrapper">
     <input id="pac-input" class="controls" type="text"
@@ -63,17 +68,20 @@
 		
 		<label for="que">Que:</label>
 			<input type="text" name="que" value="" placeholder="You are cordially invited to... Type your custom dining invitation here!" required>
-			<input type="text" name="custom" value="" placeholder="Try a custom link"><br>
+			<input type="text" name="custom" value="" placeholder="Try a custom link" 
+			pattern="^[^.#$/[\]]*$" title="Keys must be non-empty strings and can't contain &quot.&quot, &quot#&quot, &quot$&quot, &quot/&quot, &quot[&quot, or &quot]&quot"
+			><br>
+			
 		<ol id="optl">
 			<!-- TODO: Calc if two options exist. Don't use required here -->
-			<li><input type="text" name="opt1" class="opt" value="" placeholder="Enter an option here.">
+			<li><input type="text" name="opt1" class="opt" value="" placeholder="Enter an option here." onClick="focusOpt(this)">
 			<button type="button" id="focus1" onClick="focusOpt(this)"> Search for a place </button></li>
-			<li><input type="text" name="opt2" class="opt" value="" placeholder="Enter an option here.">
+			<li><input type="text" name="opt2" class="opt" value="" placeholder="Enter an option here." onClick="focusOpt(this)">
 			<button type="button" id="focus2" onClick="focusOpt(this)"> Search for a place </button></li>
-			<li><input type="text" name="opt3" class="opt" id="extra_opt" oninput="addOp()" value="" placeholder="Enter an extra option!">
+			<li><input type="text" name="opt3" class="opt" id="extra_opt" oninput="addOp()" value="" placeholder="Enter an extra option!" onClick="focusOpt(this)">
 			<button type="button" id="focus3" onClick="focusOpt(this)"> Search for a place </button></li>
 		</ol>
-	<button type="button" form="redirect-poll" id="create" onClick="createPoll()"> Create Poll! </button>
+	<button type="button" form="polldata" id="create" onClick="createPoll()" value="Create Poll!">Create Poll!</button>
 	</form>
 
 	<div id="overlay" tabindex="0">
