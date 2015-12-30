@@ -46,13 +46,13 @@ function handleLocationError(browserHasGeolocation, infoWindow, pos) {
 }
 
 function initMap() {
-  var default_coord = new google.maps.LatLng(40.7280862,-73.9937973);
+  var default_coord = new google.maps.LatLng(40.729887,-73.99109);
   var map = new google.maps.Map(document.getElementById('map'), {
     center: default_coord,
     zoom: 17,
     scrollwheel: true
   });
-  var infoWindow = new google.maps.InfoWindow({map: map});
+  var geoinfoWindow = new google.maps.InfoWindow({map: map});
 
   // Try HTML5 geolocation.
   if (navigator.geolocation) {
@@ -62,15 +62,15 @@ function initMap() {
         lng: position.coords.longitude
       };
 
-      //infoWindow.setPosition(pos);
-      //infoWindow.setContent('Location found.');
+      //geoinfoWindow.setPosition(pos);
+      //geoinfoWindow.setContent('Location found.');
       map.setCenter(pos);
     }, function() {
-      handleLocationError(true, infoWindow, map.getCenter());
+      handleLocationError(true, geoinfoWindow, map.getCenter());
     });
   } else {
     // Browser doesn't support Geolocation
-    handleLocationError(false, infoWindow, map.getCenter());
+    handleLocationError(false, geoinfoWindow, map.getCenter());
   }
   
   /*
@@ -166,7 +166,7 @@ function initMap() {
 }
 
 // Run the initialize function when the window has finished loading. Called by loading of api
-// google.maps.event.addDomListener(window, 'load', initMap);
+//google.maps.event.addDomListener(window, 'load', initMap);
 
 
 // DEV
@@ -177,15 +177,17 @@ var db = new Firebase('https://cenemus.firebaseio.com/')
 // TODO: Think how to remove exploit. Bots could easily spam or "save poll names"
 function getPollOp() {
 	var opts = $('input[name^=opt]');//new Array($('#polldata .opt').length);
-	var rops = [];
-	var rids = [];
+	var ropts = []
 	for (var i = 0; i < $('#polldata .opt').length; i++) {
-		if(opts[i].value) {
-			rops.push(opts[i].value);
-			rids.push($(opts[i]).attr("pid"))
+		if(opts[i].value || $(opts[i]).attr("pid")) {
+			ropts.push( {
+				Value:opts[i].value || null,
+				PlaceId:$(opts[i]).attr("pid") || null,
+				Votes:0
+				});
 		}
 	}
-	return {rops,rids};
+	return ropts;
 }
 
 function remOp(){
@@ -201,7 +203,7 @@ function focusOpt(focus) {
 	//fid = $('[id^=focus]').index(focus)+1;
 	console.log(focus);
 	$('#mirror').css("background-color",'#e1e1e1');
-	$('.opt').not(focus).css("background-color",'#fff').off('inputchange');
+	$('.opt').not(focus).css("background-color",'#fff').unbind('inputchange');
 	$(focus).css("background-color",'#e1e1e1').on('inputchange', function() {
 		$('#mirror').text(focus.value);
 	});
@@ -234,7 +236,7 @@ Check out <a href=\"http://www.apa.org/monitor/jun04/toomany.aspx\"> this articl
 	}
 }
 
-
+/*
 var required = function () {
     if (getPollOp() < 2) {
 		if (opts.length < 2) {
@@ -251,27 +253,26 @@ var required = function () {
     }
 };
 $('input[name^=opt]').on('change', required);
+*/
 
 function createPoll(){
 	$('#extra_optl').removeAttr("id");
-	var opts = getPollOp();
+	var popts = getPollOp();
 	
-	var pOptions = [];
-	for (var i in opts) {
-		pOptions.push( {
-			Value:opts['rops'][i],
-			PlaceId:opts['rids'][i],
-			Votes:0
-			}
-		)
+	$('input[name^=opt]').prop('required',false).attr('requried', 'disabled').removeAttr('required');
+	if (popts.length < 2) {
+		var req = ($('input[name=opt1]').val()) ? $('input[name=opt2]') : $('input[name=opt1]');
+		req.prop('required',true);
+		req[0].setCustomValidity("What kind of poll has no real choice?");
+		$('<input type="submit">').hide().appendTo($('#polldata')).click().remove();
+		return false;
 	}
-	
-	if (!pOptions.length || $('input[name=custom]')[0].checkValidity()) {
+	if (!$('input[name=custom]')[0].checkValidity()) {
 		$('<input type="submit">').hide().appendTo($('#polldata')).click().remove();
 		return false;
 	}
 	
-	var newPoll = myDataRef.push({Op: pOptions, Que: $('input[name=que]').val()});
+	var newPoll = myDataRef.push({Op: popts, Que: $('input[name=que]').val()});
 	var UUIDkey = newPoll.key();
 	var customLink = $('input[name=custom]').val();
 	if ($('input[name=custom]').val()) {
