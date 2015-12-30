@@ -10,13 +10,12 @@
 		<!--link rel="shortcut icon" type="image/png" href="media/favicon.ico"/-->
 		
 		<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		<script src="https://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
 		<script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 		<!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCS6XGSJPlv65ttttDV0IaTsipNVWLlHDw&libraries=places&signed_in=true&callback=initMap"></script> -->
 		<!-- https://developers.google.com/maps/documentation/javascript/places#LogoRequirements -->
 		<script async defer type="text/javascript"  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFhviHQI5fUQiiYA9gze2gRK9JXDlfcmg&libraries=places&signed_in=true&callback=initMap"></script> 
-		<script src="https://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
-		
 	</head>
 		<script type="text/javascript" src="./js/fb.js"></script>
 	<body>
@@ -81,7 +80,7 @@
 			<li><input type="text" name="opt3" class="opt" id="extra_opt" oninput="addOp()" value="" placeholder="Enter an extra option!" onClick="focusOpt(this)">
 			<button type="button" id="focus3" onClick="focusOpt(this)"> Search for a place </button></li>
 		</ol>
-	<button type="button" form="polldata" id="create" onClick="createPoll()" value="Create Poll!">Create Poll!</button>
+	<button type="button" id="create" onClick="createPoll()" value="Create Poll!">Create Poll!</button>
 	</form>
 
 	<div id="overlay" tabindex="0">
