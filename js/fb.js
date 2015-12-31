@@ -74,7 +74,7 @@ function initMap() {
   autocomplete = new google.maps.places.Autocomplete(input);
   autocomplete.bindTo('bounds', map);
   
-  places = new google.maps.places.PlacesService(map);
+  service = new google.maps.places.PlacesService(map);
   
   // Try HTML5 geolocation.
   if (navigator.geolocation) {
@@ -103,7 +103,7 @@ function initMap() {
 
   // The idle event is a debounced event, so we can query & listen without
   // throwing too many requests at the server.
-  map.addListener('idle', performSearch);
+  map.addListener('idle', performSearch());
   
   // Bias the SearchBox results towards current map's viewport.
   map.addListener('bounds_changed', function() {
@@ -115,21 +115,17 @@ function initMap() {
   // more details for that place.
   searchBox.addListener('places_changed', function() {
 	infowindow.close();
-    var rplaces = searchBox.getPlaces();
 
-    if (rplaces.length == 0) {
-      return;
-    }
+  var places = searchBox.getPlaces();
 
-    // Clear out the old markers.
-    markers.forEach(function(marker) {
-      marker.setMap(null);
-    });
-    markers = [];
-
+  if (places.length != 1) {
+    performSearch();
+  } else {
+    clearMarkers();
+    clearResults();
     // For each place, get the icon, name and location.
     var bounds = new google.maps.LatLngBounds();
-    rplaces.forEach(function(place) {
+    places.forEach(function(place) {
       var icon = {
         url: place.icon,
         size: new google.maps.Size(71, 71),
@@ -154,12 +150,16 @@ function initMap() {
       }
     });
     map.fitBounds(bounds);
+  }
+
   });
 	
 	function performSearch() {
+    var input = /** @type {!HTMLInputElement} */(
+      document.getElementById('pac-input'));
 	  var request = {
 		bounds: map.getBounds(),
-		keyword: 'best view'
+		keyword: input.value
 	  };
 	  service.radarSearch(request, callback);
 	}
@@ -169,15 +169,18 @@ function initMap() {
 		console.error(status);
 		return;
 	  }
-	  for (var i = 0, result; result = results[i]; i++) {
+    clearMarkers();
+    clearResults();
+    results.forEach(function(result) {
 		addMarker(result);
-	  }
+	  });
 	}
 
 	function addMarker(place) {
 	  var marker = new google.maps.Marker({
-		map: map,
 		position: place.geometry.location,
+    animation: google.maps.Animation.DROP,
+    placeResult: place,
 		icon: {
 		  url: 'http://maps.gstatic.com/mapfiles/circle.png',
 		  anchor: new google.maps.Point(10, 10),
@@ -185,16 +188,13 @@ function initMap() {
 		}
 	  });
 
-	  google.maps.event.addListener(marker, 'click', function() {
-		service.getDetails(place, function(result, status) {
-		  if (status !== google.maps.places.PlacesServiceStatus.OK) {
-			console.error(status);
-			return;
-		  }
-		  infoWindow.setContent(result.name);
-		  infoWindow.open(map, marker);
-		});
-	  });
+    //marker.placeResult = place;
+    google.maps.event.addListener(marker, 'click', showInfoWindow);
+    // TODO: On hover change icon and translate to icon
+    //google.maps.event.addListener(marker, 'hover', showIcon);
+    markers.push(marker);
+    setTimeout(dropMarker(marker), markers.length * 100);
+    addResult(place);
 	}
 	
   // Sets a listener on a radio button to change the filter type on Places Autocomplete.
@@ -212,21 +212,22 @@ function initMap() {
   setupClickListener('changetype-geocode', ['geocode']);
 }
 
-function dropMarker(i) {
+function dropMarker(marker) {
   return function() {
-    markers[i].setMap(map);
+    marker.setMap(map);
   };
 }
 
-function addResult(result, i) {
+function addResult(result) {
   var results = document.getElementById('results');
-  var markerLetter = String.fromCharCode('A'.charCodeAt(0) + i);
-  var markerIcon = MARKER_PATH + markerLetter + '.png';
 
   var tr = document.createElement('tr');
-  tr.style.backgroundColor = (i % 2 === 0 ? '#F0F0F0' : '#FFFFFF');
+  tr.style.backgroundColor = (markers.length % 2 === 0 ? '#F0F0F0' : '#FFFFFF');
   tr.onclick = function() {
-    google.maps.event.trigger(markers[i], 'click');
+    google.maps.event.trigger(result, 'click');
+  };
+  tr.onfocus = function() {
+    google.maps.event.trigger(result, 'focus');
   };
 
   var iconTd = document.createElement('td');
@@ -241,6 +242,14 @@ function addResult(result, i) {
   tr.appendChild(iconTd);
   tr.appendChild(nameTd);
   results.appendChild(tr);
+}
+
+function clearMarkers() {
+  // Clear out the old markers.
+  markers.forEach(function(marker) {
+    marker.setMap(null);
+  });
+  markers = [];
 }
 
 function clearResults() {
@@ -262,6 +271,18 @@ function showInfoWindow() {
         infoWindow.open(map, marker);
         buildIWContent(place);
       });
+}
+
+function showIcon() {
+  var marker = this;
+  var icon = {
+    url: place.icon,
+    size: new google.maps.Size(71, 71),
+    origin: new google.maps.Point(0, 0),
+    anchor: new google.maps.Point(17, 34),
+    scaledSize: new google.maps.Size(25, 25)
+  };
+  this.setIcon(icon);
 }
 
 // Load the place information into the HTML elements used by the info window.
@@ -351,9 +372,16 @@ function remOp(){
 }
 
 function searchMirror() {
-	$('#pac-input')[0].value = $('#mirror').val();
-	$('#pac-input').focus();
+  var target = $('#pac-input');
+	target[0].value = $('#mirror').val();
+	target.focus();
 	//TODO: Call new search
+  /*
+  google.maps.event.trigger(target, 'focus')
+  google.maps.event.trigger(target, 'keydown', {
+    keyCode: 13
+  });
+  */
 }
 
 function focusOpt(focus) {
