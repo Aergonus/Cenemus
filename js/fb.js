@@ -45,15 +45,37 @@ function handleLocationError(browserHasGeolocation, infoWindow, pos) {
                         'Error: Your browser doesn\'t support geolocation.');
 }
 
+var map, places, infoWindow, autocomplete, searchBox;
+var markers = [];
+var hostnameRegexp = new RegExp('^https?://.+?/');
 function initMap() {
+	
+  // Initialize 
   var default_coord = new google.maps.LatLng(40.729887,-73.99109);
-  var map = new google.maps.Map(document.getElementById('map'), {
+  map = new google.maps.Map(document.getElementById('map'), {
     center: default_coord,
     zoom: 17,
+	mapTypeControl: false,
     scrollwheel: true
   });
-  var geoinfoWindow = new google.maps.InfoWindow({map: map});
+  infoWindow = new google.maps.InfoWindow({
+	  content: document.getElementById('info-content')
+  });
 
+  
+  // Create the search box and link it to the UI element.
+  var input = /** @type {!HTMLInputElement} */(
+      document.getElementById('pac-input'));
+  var types = document.getElementById('type-selector');
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(types);
+  
+  searchBox = new google.maps.places.SearchBox(input);
+  autocomplete = new google.maps.places.Autocomplete(input);
+  autocomplete.bindTo('bounds', map);
+  
+  places = new google.maps.places.PlacesService(map);
+  
   // Try HTML5 geolocation.
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(position) {
@@ -62,69 +84,40 @@ function initMap() {
         lng: position.coords.longitude
       };
 
-      //geoinfoWindow.setPosition(pos);
-      //geoinfoWindow.setContent('Location found.');
+      //infoWindow.setPosition(pos);
+      //infoWindow.setContent('Location found.');
       map.setCenter(pos);
     }, function() {
-      handleLocationError(true, geoinfoWindow, map.getCenter());
+      handleLocationError(true, infoWindow, map.getCenter());
     });
   } else {
     // Browser doesn't support Geolocation
-    handleLocationError(false, geoinfoWindow, map.getCenter());
+    handleLocationError(false, infoWindow, map.getCenter());
   }
   
-  /*
-  // Specify location, radius and place types for your Places API search.
-  var request = {
-    location: default_coord,
-    radius: '500',
-    types: ['bakery', 'bar', 'cafe', 'food', 'meal_delivery', 'meal_takeaway', 'night_club', 'restaurant']
-  };
 
-  // Create the PlaceService and send the request.
-  // Handle the callback with an anonymous function.
-  var service = new google.maps.places.PlacesService(map);
-  service.nearbySearch(request, function(results, status) {
-    if (status == google.maps.places.PlacesServiceStatus.OK) {
-      for (var i = 0; i < results.length; i++) {
-        var place = results[i];
-        // If the request succeeds, draw the place location on
-        // the map as a marker, and register an event to handle a
-        // click on the marker.
-        var marker = new google.maps.Marker({
-          map: map,
-          position: place.geometry.location
-        });
-      }
-    }
+  // Listeners 
+  google.maps.event.addListener(map, 'click', function() {
+        infoWindow.close();
   });
-  */
-  
-  
-// Create the search box and link it to the UI element.
-  var input = /** @type {!HTMLInputElement} */(
-      document.getElementById('pac-input'));
-  var searchBox = new google.maps.places.SearchBox(input);
-  
-  var types = document.getElementById('type-selector');
-  map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
-  map.controls[google.maps.ControlPosition.TOP_LEFT].push(types);
 
-  var autocomplete = new google.maps.places.Autocomplete(input);
-  autocomplete.bindTo('bounds', map);
-
+  // The idle event is a debounced event, so we can query & listen without
+  // throwing too many requests at the server.
+  map.addListener('idle', performSearch);
+  
   // Bias the SearchBox results towards current map's viewport.
   map.addListener('bounds_changed', function() {
     searchBox.setBounds(map.getBounds());
   });
 
-  var markers = [];
+  markers = [];
   // Listen for the event fired when the user selects a prediction and retrieve
   // more details for that place.
   searchBox.addListener('places_changed', function() {
-    var places = searchBox.getPlaces();
+	infowindow.close();
+    var rplaces = searchBox.getPlaces();
 
-    if (places.length == 0) {
+    if (rplaces.length == 0) {
       return;
     }
 
@@ -136,7 +129,7 @@ function initMap() {
 
     // For each place, get the icon, name and location.
     var bounds = new google.maps.LatLngBounds();
-    places.forEach(function(place) {
+    rplaces.forEach(function(place) {
       var icon = {
         url: place.icon,
         size: new google.maps.Size(71, 71),
@@ -162,11 +155,174 @@ function initMap() {
     });
     map.fitBounds(bounds);
   });
- 
+	
+	function performSearch() {
+	  var request = {
+		bounds: map.getBounds(),
+		keyword: 'best view'
+	  };
+	  service.radarSearch(request, callback);
+	}
+	
+	function callback(results, status) {
+	  if (status !== google.maps.places.PlacesServiceStatus.OK) {
+		console.error(status);
+		return;
+	  }
+	  for (var i = 0, result; result = results[i]; i++) {
+		addMarker(result);
+	  }
+	}
+
+	function addMarker(place) {
+	  var marker = new google.maps.Marker({
+		map: map,
+		position: place.geometry.location,
+		icon: {
+		  url: 'http://maps.gstatic.com/mapfiles/circle.png',
+		  anchor: new google.maps.Point(10, 10),
+		  scaledSize: new google.maps.Size(10, 17)
+		}
+	  });
+
+	  google.maps.event.addListener(marker, 'click', function() {
+		service.getDetails(place, function(result, status) {
+		  if (status !== google.maps.places.PlacesServiceStatus.OK) {
+			console.error(status);
+			return;
+		  }
+		  infoWindow.setContent(result.name);
+		  infoWindow.open(map, marker);
+		});
+	  });
+	}
+	
+  // Sets a listener on a radio button to change the filter type on Places Autocomplete.
+  function setupClickListener(id, types) {
+    var radioButton = document.getElementById(id);
+    radioButton.addEventListener('click', function() {
+      autocomplete.setTypes(types);
+    });
+  }
+
+  setupClickListener('changetype-all', []);
+  setupClickListener('changetype-limited', ['bakery', 'bar', 'cafe', 'food', 'meal_delivery', 'meal_takeaway', 'night_club', 'restaurant']);
+  setupClickListener('changetype-address', ['address']);
+  setupClickListener('changetype-establishment', ['establishment']);
+  setupClickListener('changetype-geocode', ['geocode']);
 }
 
-// Run the initialize function when the window has finished loading. Called by loading of api
-//google.maps.event.addDomListener(window, 'load', initMap);
+function dropMarker(i) {
+  return function() {
+    markers[i].setMap(map);
+  };
+}
+
+function addResult(result, i) {
+  var results = document.getElementById('results');
+  var markerLetter = String.fromCharCode('A'.charCodeAt(0) + i);
+  var markerIcon = MARKER_PATH + markerLetter + '.png';
+
+  var tr = document.createElement('tr');
+  tr.style.backgroundColor = (i % 2 === 0 ? '#F0F0F0' : '#FFFFFF');
+  tr.onclick = function() {
+    google.maps.event.trigger(markers[i], 'click');
+  };
+
+  var iconTd = document.createElement('td');
+  var nameTd = document.createElement('td');
+  var icon = document.createElement('img');
+  icon.src = markerIcon;
+  icon.setAttribute('class', 'placeIcon');
+  icon.setAttribute('className', 'placeIcon');
+  var name = document.createTextNode(result.name);
+  iconTd.appendChild(icon);
+  nameTd.appendChild(name);
+  tr.appendChild(iconTd);
+  tr.appendChild(nameTd);
+  results.appendChild(tr);
+}
+
+function clearResults() {
+  var results = document.getElementById('results');
+  while (results.childNodes[0]) {
+    results.removeChild(results.childNodes[0]);
+  }
+}
+
+// Get the place details for a hotel. Show the information in an info window,
+// anchored on the marker for the hotel that the user selected.
+function showInfoWindow() {
+  var marker = this;
+  places.getDetails({placeId: marker.placeResult.place_id},
+      function(place, status) {
+        if (status !== google.maps.places.PlacesServiceStatus.OK) {
+          return;
+        }
+        infoWindow.open(map, marker);
+        buildIWContent(place);
+      });
+}
+
+// Load the place information into the HTML elements used by the info window.
+function buildIWContent(place) {
+  document.getElementById('iw-icon').innerHTML = '<img class="hotelIcon" ' +
+      'src="' + place.icon + '"/>';
+  document.getElementById('iw-url').innerHTML = '<b><a href="' + place.url +
+      '">' + place.name + '</a></b>';
+  document.getElementById('iw-address').textContent = place.vicinity;
+
+  if (place.formatted_phone_number) {
+    document.getElementById('iw-phone-row').style.display = '';
+    document.getElementById('iw-phone').textContent =
+        place.formatted_phone_number;
+  } else {
+    document.getElementById('iw-phone-row').style.display = 'none';
+  }
+
+  // Assign a five-star rating to the hotel, using a black star ('&#10029;')
+  // to indicate the rating the hotel has earned, and a white star ('&#10025;')
+  // for the rating points not achieved.
+  if (place.rating) {
+    var ratingHtml = '';
+    for (var i = 0; i < 5; i++) {
+      if (place.rating < (i + 0.5)) {
+        ratingHtml += '&#10025;';
+      } else {
+        ratingHtml += '&#10029;';
+      }
+    document.getElementById('iw-rating-row').style.display = '';
+    document.getElementById('iw-rating').innerHTML = ratingHtml;
+    }
+  } else {
+    document.getElementById('iw-rating-row').style.display = 'none';
+  }
+
+  // The regexp isolates the first part of the URL (domain plus subdomain)
+  // to give a short URL for displaying in the info window.
+  if (place.website) {
+    var fullUrl = place.website;
+    var website = hostnameRegexp.exec(place.website);
+    if (website === null) {
+      website = 'http://' + place.website + '/';
+      fullUrl = website;
+    }
+    document.getElementById('iw-website-row').style.display = '';
+    document.getElementById('iw-website').textContent = website;
+  } else {
+    document.getElementById('iw-website-row').style.display = 'none';
+  }
+}
+
+// Run the initialize function when the window has finished loading. 
+// Called by loading of api. Now despite race condition, both get medals
+try {
+google.maps.event.addDomListener(window, 'load', initMap);
+} catch(err) {
+    console.log(err.message);
+}
+
+
 
 
 // DEV
@@ -196,6 +352,7 @@ function remOp(){
 
 function searchMirror() {
 	$('#pac-input')[0].value = $('#mirror').val();
+	$('#pac-input').focus();
 	//TODO: Call new search
 }
 
@@ -215,8 +372,8 @@ function focusOpt(focus) {
 		scrollTop: offset.top,
 		scrollLeft: offset.left
 	});
-	if($('#pac-input').val())
-		$('#pac-input').focus();
+	//if($('#pac-input').val())
+	//	$('#pac-input').focus();
 }
 
 function addOp(){
