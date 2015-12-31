@@ -4,17 +4,20 @@
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 		<title>Cenemus! Let's Dine!</title> <!-- https://en.wikibooks.org/wiki/Latin/Lesson_2-Subjunctive_Use Snapshot 2015/11/28-->
-		<!--link type="text/css" rel="stylesheet" href="stylesheet.css"/-->
+		<link type="text/css" rel="stylesheet" href="css/stylesheet.css"/>
 		<meta name="description" content="Cenemus - Let's Dine!">
 		<meta name="viewport" content="width=device-width">
 		<!--link rel="shortcut icon" type="image/png" href="media/favicon.ico"/-->
 		
+		<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		<script src="https://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
 		<script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-		<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
-		
-		<script type="text/javascript" src="./js/fb.js"></script>
+		<!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCS6XGSJPlv65ttttDV0IaTsipNVWLlHDw&libraries=places&signed_in=true&callback=initMap"></script> -->
+		<!-- https://developers.google.com/maps/documentation/javascript/places#LogoRequirements -->
+		<script async defer type="text/javascript"  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFhviHQI5fUQiiYA9gze2gRK9JXDlfcmg&libraries=places&signed_in=true&callback=initMap"></script> 
 	</head>
+		<script type="text/javascript" src="./js/fb.js"></script>
 	<body>
 		<div id="notification"></div>
 		<div id="logBar">
@@ -39,35 +42,83 @@
 		</script>
     </div>
 
-	<!-- Yelp API requirements https://www.yelp.com/developers/display_requirements -->
-	<form action="" id="polldata" onsubmit="createPoll();">
+	<!-- Mirrored Search -->
+	<div id="mirror-wrapper">
+	<label for="mirror" >Mirrored Search (current selected option):</label>
+	<textarea id="mirror" style="height: 1em; resize: none;"></textarea> <button type="button" onClick="searchMirror()"> Search for me! </button>
+	</div>
+	<!-- Global Map Search Settings -->
+	<div id="map-wrapper">
+    <input id="pac-input" class="controls" type="text"
+        placeholder="Search for a location">
+    <div id="type-selector" class="controls">
+      <input type="radio" name="type" id="changetype-all" checked="checked">
+      <label for="changetype-all">All</label>
+
+      <input type="radio" name="type" id="changetype-limited">
+      <label for="changetype-limited">Food and Drinks</label>
+	  
+      <input type="radio" name="type" id="changetype-establishment">
+      <label for="changetype-establishment">Establishments</label>
+
+      <input type="radio" name="type" id="changetype-address">
+      <label for="changetype-address">Addresses</label>
+
+      <input type="radio" name="type" id="changetype-geocode">
+      <label for="changetype-geocode">Geocodes</label>
+	  
+    </div>
+	<div id="map"></div>
+    <div style="display: none">
+      <div id="info-content">
+        <table>
+          <tr id="iw-url-row" class="iw_table_row">
+            <td id="iw-icon" class="iw_table_icon"></td>
+            <td id="iw-url"></td>
+          </tr>
+          <tr id="iw-address-row" class="iw_table_row">
+            <td class="iw_attribute_name">Address:</td>
+            <td id="iw-address"></td>
+          </tr>
+          <tr id="iw-phone-row" class="iw_table_row">
+            <td class="iw_attribute_name">Telephone:</td>
+            <td id="iw-phone"></td>
+          </tr>
+          <tr id="iw-rating-row" class="iw_table_row">
+            <td class="iw_attribute_name">Rating:</td>
+            <td id="iw-rating"></td>
+          </tr>
+          <tr id="iw-website-row" class="iw_table_row">
+            <td class="iw_attribute_name">Website:</td>
+            <td id="iw-website"></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+	</div><br>
+	
+	<form action="#" id="polldata" onsubmit="createPoll();">
 		<input type="hidden" name="p"  value="0" />
 		<input type="hidden" name="u"  value="0" />
 		
 		<label for="que">Que:</label>
-			<input type="text" name="que" value="" placeholder="You are cordially invited to... Type your custom dining invitation here!" required><br>
+			<input type="text" name="que" value="" placeholder="You are cordially invited to... Type your custom dining invitation here!" required>
+			<input type="text" name="custom" value="" placeholder="Try a custom link" 
+			pattern="^[^.#$/[\]]*$" title="Keys must be non-empty strings and can't contain &quot.&quot, &quot#&quot, &quot$&quot, &quot/&quot, &quot[&quot, or &quot]&quot"
+			><br>
+			
 		<ol id="optl">
-			<li><input type="text" name="opt" class="opt" value="" placeholder="Enter an option here."></li>
-			<li><input type="text" name="opt" class="opt" value="" placeholder="Enter an option here."></li>
-			<li><input type="text" name="opt" class="opt" id="extra_opt" oninput="addOp()" value="" placeholder="Enter an extra option!"></li>
+			<!-- TODO: Calc if two options exist. Don't use required here -->
+			<li><input type="text" name="opt1" class="opt" value="" placeholder="Enter an option here." onClick="focusOpt(this)">
+			<button type="button" id="focus1" onClick="focusOpt(this)"> Search for a place </button></li>
+			<li><input type="text" name="opt2" class="opt" value="" placeholder="Enter an option here." onClick="focusOpt(this)">
+			<button type="button" id="focus2" onClick="focusOpt(this)"> Search for a place </button></li>
+			<li><input type="text" name="opt3" class="opt" id="extra_opt" oninput="addOp()" value="" placeholder="Enter an extra option!" onClick="focusOpt(this)">
+			<button type="button" id="focus3" onClick="focusOpt(this)"> Search for a place </button></li>
 		</ol>
-		<input type="submit" id="cPollFormButton">
+	<button type="button" id="create" onClick="createPoll()" value="Create Poll!">Create Poll!</button>
 	</form>
-	<!-- Dynamically have more options or add button. + option -->
-	
-	
-		
-	</div>
-	<div class="search">
-		Search for a cusine or a restuarant near you.
-	</div>
 
-	<form action="Cenemus.html" id="redirect-poll">
-
-	</form>
-	
-	<button type="button" form="redirect-poll" id="create" onClick="createPoll()">Create Poll</button>
-	
 	<div id="overlay" tabindex="0">
     </div>
 		<script type="text/javascript">
