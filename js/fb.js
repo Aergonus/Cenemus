@@ -600,9 +600,8 @@ function addOp() {
 	var opti = $('#polldata .opt').length;
 	if (opti < 25) {
 		$('#optl').append(
-			"		<li><input type=\"text\" name=\"opt" + (opti + 1) + "\" class=\"opt\" id=\"extra_opt\" oninput=\"addOp(this)\" value=\"\" placeholder=\"Enter an extra option!\" onClick=\"focusOpt(this)\">\
- <button type=\"button\" id=\"focus" + (opti + 1) + "\" onClick=\"focusOpt(this)\"> Search for a place </button></li>"
-		);
+			"		<li><input type=\"text\" name=\"opt" + (opti + 1) + "\" class=\"opt\" id=\"extra_opt\" oninput=\"addOp(this)\" value=\"\" placeholder=\"Enter an extra option!\" onClick=\"focusOpt(this)\">"
+ 		);
 	} else {
 		$('#optl').append(
 			"<div style=\"font-size: .8em;\">Research shows that having too many options usually results in a lower particiaption rate. We recommend under 24 options. <br> \
