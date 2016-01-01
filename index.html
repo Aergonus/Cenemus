@@ -8,14 +8,15 @@
 		<meta name="description" content="Cenemus - Let's Dine!">
 		<meta name="viewport" content="width=device-width">
 		<!--link rel="shortcut icon" type="image/png" href="media/favicon.ico"/-->
-		
+
+		<script src="js/d3pie.min.js"></script>
 		<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 		<script src="https://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
 		<script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 		<!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCS6XGSJPlv65ttttDV0IaTsipNVWLlHDw&libraries=places&signed_in=true&callback=initMap"></script> -->
 		<!-- https://developers.google.com/maps/documentation/javascript/places#LogoRequirements -->
-		<script async defer type="text/javascript"  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFhviHQI5fUQiiYA9gze2gRK9JXDlfcmg&libraries=places&signed_in=true&callback=initMap"></script> 
+		<script async defer type="text/javascript"  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFhviHQI5fUQiiYA9gze2gRK9JXDlfcmg&libraries=places&signed_in=true&callback=oninit"></script> 
 	</head>
 		<script type="text/javascript" src="./js/fb.js"></script>
 	<body>
@@ -41,7 +42,7 @@
 		(adsbygoogle = window.adsbygoogle || []).push({});
 		</script>
 	</div>
-
+	<div id="donut"></div>
 	<!-- Mirrored Search -->
 	<div id="mirror-wrapper">
 	<label for="mirror" >Mirrored Search (current selected option):</label>
@@ -104,7 +105,8 @@
 	  </div>
 	</div>
 	</div><br>
-	
+	<div id="pollInfo-wrapper">	</div>
+				
 	<form action="#" id="polldata" onsubmit="createPoll();">
 		<input type="hidden" name="p"  value="0" />
 		<input type="hidden" name="u"  value="0" />

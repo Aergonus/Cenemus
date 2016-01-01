@@ -19,6 +19,27 @@ $.event.special.inputchange = {
 	}
 };
 
+function rainbow(step, numOfSteps) {
+  // This function generates vibrant, "evenly spaced" colours (i.e. no clustering). This is ideal for creating easily distinguishable vibrant markers in Google Maps and other apps.
+  // Adam Cole, 2011-Sept-14
+  // HSV to RBG adapted from: http://mjijackson.com/2008/02/rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript
+  var r, g, b;
+  var h = step / numOfSteps;
+  var i = ~~(h * 6);
+  var f = h * 6 - i;
+  var q = 1 - f;
+  switch(i % 6){
+	  case 0: r = 1; g = f; b = 0; break;
+	  case 1: r = q; g = 1; b = 0; break;
+	  case 2: r = 0; g = 1; b = f; break;
+	  case 3: r = 0; g = q; b = 1; break;
+	  case 4: r = f; g = 0; b = 1; break;
+	  case 5: r = 1; g = 0; b = q; break;
+  }
+  var c = "#" + ("00" + (~ ~(r * 255)).toString(16)).slice(-2) + ("00" + (~ ~(g * 255)).toString(16)).slice(-2) + ("00" + (~ ~(b * 255)).toString(16)).slice(-2);
+  return (c);
+}
+
 // TESTING
 var myDataRef = new Firebase('https://v8x9g5gob7f.firebaseio-demo.com/');
 var myUserID = null;
@@ -54,6 +75,56 @@ function handleLocationError(browserHasGeolocation, infoWindow, pos) {
 var map, service, infoWindow, autocomplete, searchBox, cPlace;
 var markers = [];
 var hostnameRegexp = new RegExp('^https?://.+?/');
+
+var pollKey;
+var pollInfo;
+function oninit() {
+	console.log("INIT!");
+	myDataRef.child("Lookup").child(location.hash.replace("#","")).once('value', function(snap) {
+		pollKey = snap.val();
+		
+	if (pollKey) {
+		myDataRef.child("PollDB").child(pollKey).once('value', function(snap) {
+			pollInfo = snap.val();
+		});
+		$('#mirror-wrapper').hide();
+		$('#polldata').hide();
+		// TODO : LOAD MAP WITH THE LOCATIONS
+		$('#map-wrapper').hide();
+
+		$('<h3 type="text" name="que" value="">'+pollInfo.Que+'</h3>').appendTo($('#pollInfo-wrapper'));
+		for (op in pollInfo.Op) {
+			$('<label><input type="checkbox" class="radio" pid="'+pollInfo.Op[op].PlaceId+'" value="'+op+'" name="poll" />'+pollInfo.Op[op].Value+'</label><br>').appendTo($('#pollInfo-wrapper'));
+		}
+		$('<button type="button" id="vote" onClick="submitVote()" value="Submit Vote!">Submit Vote!</button>').appendTo($('#pollInfo-wrapper'));
+		
+	// the selector will match all input controls of type :checkbox
+	// and attach a click event handler 
+	$("input:checkbox").on('click', function() {
+	  // in the handler, 'this' refers to the box clicked on
+	  var $box = $(this);
+	  if ($box.is(":checked")) {
+		// the name of the box is retrieved using the .attr() method
+		// as it is assumed and expected to be immutable
+		var group = "input:checkbox[name='" + $box.attr("name") + "']";
+		// the checked state of the group/box on the other hand will change
+		// and the current value is retrieved using .prop() method
+		$(group).prop("checked", false);
+		$box.prop("checked", true);
+	  } else {
+		$box.prop("checked", false);
+	  }
+	});
+
+
+	} else {
+		$('#pollInfo-wrapper').hide();
+		initMap();
+	}
+	});
+
+}
+
 
 function initMap() {
 
@@ -237,7 +308,7 @@ function initMap() {
 			animation: google.maps.Animation.DROP,
 			placeResult: place,
 			icon: {
-				url: 'http://maps.gstatic.com/mapfiles/circle.png',
+				url: 'https://maps.gstatic.com/mapfiles/circle.png',
 				anchor: new google.maps.Point(10, 10),
 				scaledSize: new google.maps.Size(10, 17)
 			}
@@ -452,7 +523,7 @@ function buildIWContent(place) {
 // Run the initialize function when the window has finished loading. 
 // Called by loading of api. Now despite race condition, both get medals
 try {
-	google.maps.event.addDomListener(window, 'load', initMap);
+	google.maps.event.addDomListener(window, 'load', oninit);
 } catch (err) {
 	console.log(err.message);
 }
@@ -571,19 +642,21 @@ function createPoll() {
 		$('<input type="submit">').hide().appendTo($('#polldata')).click().remove();
 		return false;
 	}
-	
-	var newPoll = myDataRef.push({
+
+	var newPoll = myDataRef.child('PollDB').push({
 		Op: popts,
 		Que: $('input[name=que]').val() || "You are cordially invited to..." // hacky fix to have a prompt
 	});
 	var UUIDkey = newPoll.key();
 	var customLink = $('input[name=custom]').val();
+	var lookup = {};
 	if ($('input[name=custom]').val()) {
-		var lookup = {};
 		lookup[customLink] = UUIDkey;
-		myDataRef.child('lookup').update(lookup);
+		myDataRef.child('Lookup').update(lookup);
 	} else {
 		customLink = UUIDkey;
+		lookup[customLink] = UUIDkey;
+		myDataRef.child('Lookup').update(lookup);
 	}
 	window.location.replace("https://spellchaser.github.io/Cenemus/#" + customLink) // window.location.href
 		//$("#polldata").attr("action", "/" + newPollID).submit();
@@ -591,6 +664,121 @@ function createPoll() {
 	return false;
 }
 
+
+function countProperties(obj) {
+    var count = 0;
+
+    for(var prop in obj) {
+        if(obj.hasOwnProperty(prop))
+            ++count;
+    }
+
+    return count;
+}
+function submitVote() {
+	var vote = $('input[name=poll]:checked');
+	var sendvote = [];
+	sendvote['Value'] = vote[0].value;
+	sendvote['PlaceId'] = vote.attr('pid');
+	var user = myDataRef.child('PollDB').child(pollKey).child("Voters").push(vote[0].value);
+	userkey = user.key();
+	//var sendvote = [];
+	//sendvote[userkey] = vote.attr('pid');
+	//myDataRef.child('PollDB').child(pollKey).child(vote[0].value).child("Votes").push(sendvote);
+	// TERRIBLE FOR NOW, but count votes ._. allows dups oh well
+	$('#pollInfo-wrapper').hide();
+	var snapPoll;
+	myDataRef.child('PollDB').child(pollKey).once('value', function(snap) {
+		snapPoll = snap.val();
+	});
+	var snapVotes = snapPoll.Voters;
+	var content = [];
+	for (vote in snapVotes) {
+		console.log(vote);
+		var voteplace = snapVotes[vote];
+		console.log(voteplace);
+		if (!content[voteplace]) {
+			console.log(content[voteplace]);
+			var label = snapPoll.Op[voteplace].Value, color = rainbow(voteplace+1,countProperties(snapVotes)+1);
+			console.log(label);
+			content[voteplace] = {
+				"label": label,
+				"value": 1,
+				"color": color
+			};
+		} else {
+			content[snapVotes[vote]].value += 1;
+		}
+	}
+	console.log(content);
+	var pie = new d3pie($('#donut')[0], {
+		"header": {
+			"title": {
+				"text": pollInfo.Que,
+				"fontSize": 22,
+				"font": "verdana"
+			},
+			"subtitle": {
+				"text": "Where we're going to eat democratized",
+				"color": "#999999",
+				"fontSize": 10,
+				"font": "verdana"
+			},
+			"titleSubtitlePadding": 12
+		},
+		"footer": {
+			"text": "Source: me, my room, the last couple of months.",
+			"color": "#999999",
+			"fontSize": 11,
+			"font": "open sans",
+			"location": "bottom-center"
+		},
+		"size": {
+			"canvasHeight": 600,
+			"canvasWidth": 600,
+			"pieInnerRadius": "9%",
+			"pieOuterRadius": "81%"
+		},
+		"data": {
+			"content": content
+		},
+		"labels": {
+			"outer": {
+				"pieDistance": 32
+			},
+			"inner": {
+				"format": "value"
+			},
+			"mainLabel": {
+				"font": "verdana"
+			},
+			"percentage": {
+				"color": "#e1e1e1",
+				"font": "verdana",
+				"decimalPlaces": 0
+			},
+			"value": {
+				"color": "#e1e1e1",
+				"font": "verdana"
+			},
+			"lines": {
+				"enabled": true,
+				"color": "#cccccc"
+			},
+			"truncation": {
+				"enabled": true
+			}
+		},
+		"effects": {
+			"pullOutSegmentOnClick": {
+				"effect": "elastic",
+				"speed": 400,
+				"size": 8
+			}
+		},
+		"callbacks": {}
+	});
+}
 
 // Resources 
 
