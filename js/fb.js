@@ -660,7 +660,7 @@ function createPoll() {
 		lookup[customLink] = UUIDkey;
 		myDataRef.child('Lookup').update(lookup);
 	}
-	window.location.replace("https://spellchaser.github.io/Cenemus/#" + customLink); // window.location.href
+	window.location.href("https://spellchaser.github.io/Cenemus/#" + customLink); // window.location.replace
 		//$("#polldata").attr("action", "/" + newPollID).submit();
 		//window.location = "https://www.youtube.com"; 
 	return false;
