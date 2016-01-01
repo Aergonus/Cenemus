@@ -696,13 +696,9 @@ function submitVote() {
 	var snapVotes = snapPoll.Voters;
 	var content = [];
 	for (vote in snapVotes) {
-		console.log(vote);
 		var voteplace = snapVotes[vote];
-		console.log(voteplace);
 		if (!content[voteplace]) {
-			console.log(content[voteplace]);
 			var label = snapPoll.Op[voteplace].Value, color = rainbow(voteplace+1,countProperties(snapVotes)+1);
-			console.log(label);
 			content[voteplace] = {
 				"label": label,
 				"value": 1,
@@ -712,7 +708,18 @@ function submitVote() {
 			content[snapVotes[vote]].value += 1;
 		}
 	}
-	console.log(content);
+	for (op in snapPoll.Op) {
+		var voteplace = snapPoll.Op[op];
+		if (!content[op]) {
+			var label = snapPoll.Op[op].Value, color = rainbow(voteplace+1,countProperties(snapVotes)+1);
+			content[op] = {
+				"label": label,
+				"value": 0,
+				"color": color
+			};
+		} else {
+		}
+	}
 	var pie = new d3pie($('#donut')[0], {
 		"header": {
 			"title": {
